@@ -14,6 +14,9 @@ class Server:
         @self.app.route("/")
         def index():
             return render_template( "index.html" )
+        @self.app.route("/admin") 
+        def admin():
+            return render_template( "admin.html" )
 
     def run( self ) -> None: 
             self.app.run(
