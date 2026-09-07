@@ -1,8 +1,32 @@
-<button type="button">Upload </button>
+<button type="button" id="Upload">Upload </button>
 
 <div id="drop-zone" style="width: 300px; height: 200px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center;">
   Drag and drop files here
 </div>
+
+
+<script>
+  // 1. Select the button using its ID
+  const button = document.getElementById('Upload');
+
+  // 2. Define what happens when the button is clicked
+  function handleButtonClick() {
+
+    // Show a confirmation dialog to the user.
+    if (confirm("Are you sure you want to upload the file?")) {
+      // 1. Upload the file and show a success message.
+      alert("File uploaded succesfully!");
+    }
+    else {
+      // 2. If the user cancels, end the function and do not proceed with the upload.
+      return;
+    }
+  }
+  
+
+  // 3. Attach the event listener to the button
+  button.addEventListener('click', handleButtonClick);
+</script>
 
 <script>
   const dropZone = document.getElementById('drop-zone');
