@@ -14,9 +14,11 @@ class Server:
         @self.app.route("/", methods=["GET"])
         def index():
             return render_template( "index.html" ) 
+        
         @self.app.route("/admin", methods=["GET"]) 
         def admin():
             return render_template( "admin.html" )
+        
         @self.app.route("/upload", methods=["POST"])
         def upload():
             file = request.files["file"]

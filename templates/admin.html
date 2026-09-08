@@ -1,9 +1,13 @@
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>REA Lobby TV Admin</title>
+      <script src="https://unpkg.com/dropzone@6/dist/dropzone-min.js"></script>
+      <link rel="stylesheet" href=
+      "https://unpkg.com/dropzone@6/dist/dropzone.css" type="text/css" />
+    </head>
+  <body>
 <button type="button" id="Upload">Upload </button>
-
-<div id="drop-zone" style="width: 300px; height: 200px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center;">
-  Drag and drop files here
-</div>
-
 
 <script>
   // 1. Select the button using its ID
@@ -28,26 +32,12 @@
   button.addEventListener('click', handleButtonClick);
 </script>
 
+<div class="dropzone my-dropzone"></div>
+
 <script>
-  const dropZone = document.getElementById('drop-zone');
-
-  // 1. Necessary to allow a drop in Chrome
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault(); 
-    e.dataTransfer.dropEffect = 'copy'; // Visual indicator: shows copy icon
-  });
-
-  // 2. Handle the drop action
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault(); // Stop Chrome from opening the file directly
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      console.log(`${files.length} file(s) dropped.`);
-      // Process files here (e.g., append to FormData or upload via XHR/Fetch)
-      for (let i = 0; i < files.length; i++) {
-        console.log(`File name: ${files[i].name}`);
-      }
-    }
-  });
+  // Dropzone has been added as a global variable.
+  const dropzone = new Dropzone("div.my-dropzone", { url: "/upload" });
 </script>
+
+</body>
+</html>
