@@ -36,8 +36,9 @@
 
 <script>
   // Dropzone has been added as a global variable.
-  const dropzone = new Dropzone("div.my-dropzone", { url: "/upload" });
-</script>
+  const dropzone = new Dropzone("div.my-dropzone", {url: "/upload", maxFiles: 1, acceptedFiles: "video/mp4", removeFile: true});
+
+</script> 
 
 </body>
 </html>
