@@ -24,6 +24,14 @@
         text-align: center;
         cursor: pointer;
         margin-bottom: 12px;
+        height: 80px;
+        width: 200px;
+      }
+
+      #Upload:disabled {
+        background-color: #cccccc;
+        border: 2px solid black;
+        cursor: not-allowed;
       }
 
       .my-dropzone {
@@ -53,25 +61,31 @@
     <link rel="stylesheet" href="https://unpkg.com/dropzone@6/dist/dropzone.css" type="text/css" />
   </head>
   <body>
-    <button type="button" id="Upload">Upload</button>
+    <button type="button" id="Upload" disabled>Upload</button>
 
     <div class="dropzone my-dropzone"></div>
-    <div id="status">Ready</div>
+    <div id="status">Please upload a file</div>
 
     <script>
       // 1. Select the button using its ID
       const button = document.getElementById('Upload');
       const status = document.getElementById('status');
 
+      function updateStatus(message) {
+        status.textContent = message;
+      }
+
+      function updateButtonState() {
+        button.disabled = dropzone.files.length === 0;
+      }
+
       // 2. Define what happens when the button is clicked
       function handleButtonClick() {
         // Show a confirmation dialog to the user.
         if (confirm("Are you sure you want to upload the file?")) {
-          if (dropzone.getQueuedFiles().length > 0) {
+          if (dropzone.getAcceptedFiles().length > 0) {
             status.textContent = "Uploading...";
             dropzone.processQueue();
-          } else {
-            status.textContent = "Please choose a file first.";
           }
         } else {
           // 2. If the user cancels, end the function and do not proceed with the upload.
@@ -92,23 +106,33 @@
 
       dropzone.on("addedfile", function () {
         updateStatus("Ready");
+        button.disabled = false; // Enable the button when a file is added
       });
 
       dropzone.on("sending", function () {
         updateStatus("Uploading...");
       });
 
+      dropzone.on("removedfile", function () {
+        updateButtonState();
+      })
+
       dropzone.on("success", function () {
         updateStatus("Ready");
       });
 
       dropzone.on("queuecomplete", function () {
-        updateStatus("Ready");
+        updateStatus("Upload Successful");
+        button.disabled = true; // Disable the button after upload is complete
+        dropzone.removeAllFiles(); // Clear the dropzone after successful upload
       });
 
       dropzone.on("error", function () {
         updateStatus("Upload failed");
+        button.disabled = true; // Disable the button if there's an error
       });
+
+      updateButtonState(); // Initial button state
     </script>
   </body>
 </html>
