@@ -106,7 +106,17 @@
         autoProcessQueue: false
       });
 
-      
+      function statusReset() {
+        setTimeout(() => {
+          updateStatus("Please upload a file");
+        }, 3000);
+      }
+
+      function statusReady() {
+        setTimeout(() => {
+          updateStatus("Ready");
+        }, 3000);
+      }
 
       dropzone.on("addedfile", function () {
         updateStatus("Ready");
@@ -119,12 +129,14 @@
 
       dropzone.on("removedfile", function () {
         updateButtonState();
-      })
+      });
 
       dropzone.on("success", function () {
         updateStatus("Upload Successful");
         button.disabled = true; // Disable the button after upload is complete
-        dropzone.removeAllFiles(); // Clear the dropzone after successful upload
+        dropzone.removeAllFiles(); // Clear the dropzone after successful upload`
+        statusReset()
+        
       });
 
       dropzone.on("error", function (file, errorMessage) {
@@ -136,17 +148,25 @@
 
         button.disabled = true; // Disable the button if there's an error
         dropzone.removeFile(file);
+
+        // Wait 3 seconds, then check whether an accepted file remains.
+        setTimeout(() => {
+          if (dropzone.getAcceptedFiles().length >= 1) {
+            updateStatus("Ready");
+            button.disabled = false; // Enable upload when an accepted file remains
+          }
+          else {
+            updateStatus("Please upload a file");
+            button.disabled = true; // Keep upload disabled when no file remains
+          }
+        }, 3000);
       });
 
       dropzone.on("maxfilesexceeded", function (file) {
         dropzone.removeFile(file); // Remove the file that exceeded the limit
         updateStatus("Only one file can be uploaded at a time.");
+        statusReady()
       });
-
-      dropzone.on("wrongfiletype", function(file) {
-        dropzone.removeRecentlyAddedFile(file); // Remove the newly added file if the file type is wrong
-        updateStatus("Only MP4 files are allowed.");
-      })
 
       updateButtonState(); // Initial button state
     </script>
