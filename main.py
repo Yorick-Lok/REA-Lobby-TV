@@ -23,7 +23,7 @@ class Server:
         print (now)
         now = now.replace(':', '-')
         print (now)    
-        newFile = static_dir / f"old videos/{now}.mp4"
+        newFile = static_dir / f"backups/{now}.mp4"
         OldFile.rename(newFile)
 
     
