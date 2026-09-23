@@ -19,11 +19,20 @@ class Server:
             print ("the file does not exist")
             return
 
+
+ 
+    
+
         now=str(datetime.datetime.now())
         print (now)
         now = now.replace(':', '-')
         print (now)    
+
         newFile = static_dir / f"backups/{now}.mp4"
+        newpath = static_dir / f"backups"
+        if not os.path.exists(newpath):
+            os.makedirs(newpath)
+            
         OldFile.rename(newFile)
 
     
