@@ -1,43 +1,174 @@
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>REA Lobby TV Admin</title>
-      <script src="https://unpkg.com/dropzone@6/dist/dropzone-min.js"></script>
-      <link rel="stylesheet" href=
-      "https://unpkg.com/dropzone@6/dist/dropzone.css" type="text/css" />
-    </head>
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f3f3f3;
+        background-image: url('static/REA-Background.jpg');
+        background-size: cover;
+        background-position: center;
+      }
+
+      #Upload {
+        background-color: rgb(39, 114, 233);
+        border: 2px solid black;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: -315px;
+        height: 80px;
+        width: 200px;
+      }
+
+      #Upload:disabled {
+        background-color: #cccccc;
+        border: 2px solid black;
+        cursor: not-allowed;
+      }
+
+      .my-dropzone {
+        width: 500px;
+        height: 220px;
+        max-width: 90vw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.5);
+      }
+
+      #status {
+        margin-top: -270px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: #eaf3ff;
+        border: 1px solid #cfe0ff;
+        color: #222;
+        font-weight: bold;
+        text-align: center;
+        min-width: 160px;
+      }
+    
+    </style>
+    <title>REA Lobby TV Admin</title>
+    <script src="https://unpkg.com/dropzone@6/dist/dropzone-min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/dropzone@6/dist/dropzone.css" type="text/css" />
+  </head>
   <body>
-<button type="button" id="Upload">Upload </button>
+    <button type="button" id="Upload" disabled>Upload</button>
 
-<script>
-  // 1. Select the button using its ID
-  const button = document.getElementById('Upload');
+    <div class="dropzone my-dropzone"></div>
+    <div id="status">Please upload a file</div>
 
-  // 2. Define what happens when the button is clicked
-  function handleButtonClick() {
+    <script>
+      // 1. Select the button using its ID
+      const button = document.getElementById('Upload');
+      const status = document.getElementById('status');
 
-    // Show a confirmation dialog to the user.
-    if (confirm("Are you sure you want to upload the file?")) {
-      // 1. Upload the file and show a success message.
-      alert("File uploaded succesfully!");
-    }
-    else {
-      // 2. If the user cancels, end the function and do not proceed with the upload.
-      return;
-    }
-  }
-  
-  
-  // 3. Attach the event listener to the button
-  button.addEventListener('click', handleButtonClick);
-</script>
+      function updateStatus(message) {
+        status.textContent = message;
+      }
 
-<div class="dropzone my-dropzone"></div>
+      function updateButtonState() {
+        button.disabled = dropzone.files.length === 0;
+      }
 
-<script>
-  // Dropzone has been added as a global variable.
-  const dropzone = new Dropzone("div.my-dropzone", { url: "/upload" });
-</script>
+      // 2. Define what happens when the button is clicked
+      function handleButtonClick() {
+        // Show a confirmation dialog to the user.
+        if (confirm("Are you sure you want to upload the file?")) {
+          if (dropzone.getAcceptedFiles().length > 0) {
+            status.textContent = "Uploading...";
+            dropzone.processQueue();
+          }
+        } else {
+          // 2. If the user cancels, end the function and do not proceed with the upload.
+          return;
+        }
+      }
 
-</body>
+      // 3. Attach the event listener to the button
+      button.addEventListener('click', handleButtonClick);
+
+      // Dropzone has been added as a global variable.
+      const dropzone = new Dropzone("div.my-dropzone", {
+        url: "/upload",
+        maxFiles: 1,
+        acceptedFiles: "video/mp4",
+        autoProcessQueue: false
+      });
+
+      function statusReset() {
+        setTimeout(() => {
+          updateStatus("Please upload a file");
+        }, 3000);
+      }
+
+      function statusReady() {
+        setTimeout(() => {
+          updateStatus("Ready");
+        }, 3000);
+      }
+
+      dropzone.on("addedfile", function () {
+        updateStatus("Ready");
+        button.disabled = false; // Enable the button when a file is added
+      });
+
+      dropzone.on("sending", function () {
+        updateStatus("Uploading...");
+      });
+
+      dropzone.on("removedfile", function () {
+        updateButtonState();
+      });
+
+      dropzone.on("success", function () {
+        updateStatus("Upload Successful");
+        button.disabled = true; // Disable the button after upload is complete
+        dropzone.removeAllFiles(); // Clear the dropzone after successful upload`
+        statusReset()
+        
+      });
+
+      dropzone.on("error", function (file, errorMessage) {
+        if (file.accepted === false) {
+          updateStatus("Only MP4 files are allowed.");
+        } else {
+          updateStatus(errorMessage || "Upload failed");
+        }
+
+        button.disabled = true; // Disable the button if there's an error
+        dropzone.removeFile(file);
+
+        // Wait 3 seconds, then check whether an accepted file remains.
+        setTimeout(() => {
+          if (dropzone.getAcceptedFiles().length >= 1) {
+            updateStatus("Ready");
+            button.disabled = false; // Enable upload when an accepted file remains
+          }
+          else {
+            updateStatus("Please upload a file");
+            button.disabled = true; // Keep upload disabled when no file remains
+          }
+        }, 3000);
+      });
+
+      dropzone.on("maxfilesexceeded", function (file) {
+        dropzone.removeFile(file); // Remove the file that exceeded the limit
+        updateStatus("Only one file can be uploaded at a time.");
+        statusReady()
+      });
+
+      updateButtonState(); // Initial button state
+    </script>
+  </body>
 </html>
