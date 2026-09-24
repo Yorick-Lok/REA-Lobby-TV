@@ -65,8 +65,9 @@ class Server:
 
     def run( self ) -> None: 
             self.app.run(
-                port=80,
-                host="127.0.0.1"
+                debug=False,
+                port=5000,
+                host="0.0.0.0"
             )
 
 if __name__ == "__main__":
