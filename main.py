@@ -15,6 +15,10 @@ class Server:
         self.http_port = 5000
         self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode="threading",)
         self.socketio_data = []
+        
+        self.app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
+        self.app.config['DROPZONE_TIMEOUT'] = 0
+
         self.create_routes()
 
     def BackUpCurrentScreen_mp4(self, static_dir: Path) -> None:
