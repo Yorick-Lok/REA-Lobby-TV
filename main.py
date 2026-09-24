@@ -2,7 +2,9 @@
 from flask import Flask, request, render_template
 import os
 import datetime
+from flask_socketio import SocketIO, emit
 from pathlib import Path
+import random
 
 
 class Server:
@@ -10,6 +12,10 @@ class Server:
  
         # flask instance
         self.app = Flask(__name__)
+        self.http_port = 5000
+        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode="threading",)
+        self.socketio_data = []
+        
         self.app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
         self.app.config['DROPZONE_TIMEOUT'] = 0
 
@@ -39,6 +45,12 @@ class Server:
 
     
     def create_routes( self ) -> None:
+         
+        @self.socketio.on("connect") 
+        def handle_connect():
+            """Send initial application state to a newly connected client."""
+            print("Client connected")
+
         @self.app.route("/", methods=["GET"])
         def index():
             return render_template( "index.html" ) 
@@ -61,16 +73,22 @@ class Server:
                 print(folder2)
                 self.BackUpCurrentScreen_mp4(folder2)
 
+                data = {
+                    "number": random.randrange(20, 5000, 3)
+                }
+
                 file.save("static/Screen.mp4")
+                self.socketio.emit("state", data)
                 return "File uploaded successfully!"
             return "No file uploaded."
 
-    def run( self ) -> None: 
-            self.app.run(
-                debug=False,
-                port=5000,
-                host="0.0.0.0"
-            )
+        self.socketio.run(
+            self.app, 
+            debug=False,
+            port=self.http_port, 
+            host="0.0.0.0",
+            allow_unsafe_werkzeug=True
+        )
 
 if __name__ == "__main__":
     manager = Server()
