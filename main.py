@@ -19,11 +19,20 @@ class Server:
             print ("the file does not exist")
             return
 
+
+ 
+    
+
         now=str(datetime.datetime.now())
         print (now)
         now = now.replace(':', '-')
         print (now)    
-        newFile = static_dir / f"old videos/{now}.mp4"
+
+        newFile = static_dir / f"backups/{now}.mp4"
+        newpath = static_dir / f"backups"
+        if not os.path.exists(newpath):
+            os.makedirs(newpath)
+
         OldFile.rename(newFile)
 
     
@@ -40,6 +49,9 @@ class Server:
         def upload():
             file = request.files["file"]
             if file:
+                if Path(f"{file.filename}").suffix != '.mp4':
+                    return
+                
                 # rename old ..
                 folder= str(Path(__file__).resolve().parent)
                 folder2 = Path(f"{folder}/static")
