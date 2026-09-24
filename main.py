@@ -10,6 +10,8 @@ class Server:
  
         # flask instance
         self.app = Flask(__name__)
+        self.app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
+        self.app.config['DROPZONE_TIMEOUT'] = 0
 
         self.create_routes()
 
