@@ -103,7 +103,9 @@
         url: "/upload",
         maxFiles: 1,
         acceptedFiles: "video/mp4",
-        autoProcessQueue: false
+        autoProcessQueue: false,
+        maxFilesize: 1024,
+        timeout: 0
       });
 
       function statusReset() {
