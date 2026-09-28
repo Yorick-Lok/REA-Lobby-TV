@@ -19,9 +19,26 @@ sudo mkdir -p /rea
 cd /rea
 sudo git clone https://github.com/Yorick-Lok/REA-Lobby-TV.git
 ```
-3. Setup Flask
+3. Setup Update script
 ```bash
-sudo apt-get install python3-flask python3-flask-socketio
+sudo chmod +x update.sh
+```
+
+3. Setup Flask / Socket.IO
+```bash
+sudo apt-get install python3-venv python3-full
+python3 -m venv .venv
+
+.venv/bin/pip install \
+    "Flask==2.2.5" \
+    "Werkzeug==2.2.3" \
+    "Flask-SocketIO==5.3.2" \
+    "python-socketio==5.7.2" \
+    "python-engineio==4.3.4" \
+    "simple-websocket==1.1.0"
+
+# verify versions:
+.venv/bin/pip list | grep -Ei 'flask|werkzeug|socketio|engineio|websocket'
 ```
 
 2. Setup as a service
@@ -32,7 +49,8 @@ sudo nano /etc/systemd/system/reatv.service
 [Service]
 User=pi
 WorkingDirectory=/rea/REA-Lobby-TV
-ExecStart=/usr/bin/python3 /rea/REA-Lobby-TV/main.py
+#ExecStart=/usr/bin/python3 /rea/REA-Lobby-TV/main.py
+ExecStart=/rea/REA-Lobby-TV/.venv/bin/python /rea/REA-Lobby-TV/main.py
 Restart=always
 RestartSec=5
 StandardOutput=syslog
@@ -55,4 +73,8 @@ journalctl -u reatv -f
 
 # restart service
 sudo systemctl restart reatv
+
+# update from main
+cd /rea/REA-Lobby-TV
+sudo ./update.sh
 ```
