@@ -4,6 +4,28 @@
 <title>REA Lobby TV</title>
 <script src="static/socket.io.min.js"></script>
 </head>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  video {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    background: #000;
+  }
+</style>
 <body>
 
 <video 
@@ -25,11 +47,11 @@ Your browser does not support the video tag.
         socket = io()
 
         socket.on("connect", () => {
-          alert("Connected to server!")
+          
         })
 
         socket.on("state", () => {
-          alert("Reload page")
+          window.location.reload()
         })
       }
 
