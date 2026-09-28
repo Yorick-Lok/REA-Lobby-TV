@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>REA Lobby TV</title>
+<meta http-equiv="Cache-Control" content="no-cache">
 <script src="static/socket.io.min.js"></script>
 </head>
 <style>
@@ -35,16 +36,18 @@
     loop
     muted
     playsinline>
-  <source src="static/Screen.mp4" type="video/mp4"> 
+  <source id="screen" type="video/mp4">
 Your browser does not support the video tag.
 </video>
 
     <script>
       let socket;
+      const video = document.getElementById("screen");
+      video.src = `/static/Screen.mp4?t=${Date.now()}`
 
       function connect_socket()
       {
-        socket = io()
+        socket = io({transports: ['websocket']})
 
         socket.on("connect", () => {
           
