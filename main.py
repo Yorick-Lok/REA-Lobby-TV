@@ -13,7 +13,7 @@ class Server:
         # flask instance
         self.app = Flask(__name__)
         self.http_port = 5000
-        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode="threading",)
+        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode="threading", logger=True, engineio_logger=True)
         self.socketio_data = []
         
         self.app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
@@ -58,7 +58,13 @@ class Server:
         @self.app.route("/admin", methods=["GET"]) 
         def admin():
             return render_template( "admin.html" )
-        
+
+        @self.app.route("/update", methods=["POST"])
+        def update():
+            self.socketio.emit("state")
+            return "Update command sent!"
+
+            
         @self.app.route("/upload", methods=["POST"])
         def upload():
             file = request.files["file"]
