@@ -59,7 +59,7 @@ class Server:
         def admin():
             return render_template( "admin.html" )
 
-        @self.app.route("/update", methods=["POST"])
+        @self.app.route("/update", methods=["GET"])
         def update():
             self.socketio.emit("state")
             return "Update command sent!"
