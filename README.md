@@ -78,3 +78,19 @@ sudo systemctl restart reatv
 cd /rea/REA-Lobby-TV
 sudo ./update.sh
 ```
+
+## Updating
+There is a update script that will: 
+- Stop Flask
+- Pull the latest changes from Git
+- Start Flask. 
+- Then wait 10 seconds before restarting the fullscreen browser.
+
+```bash
+# run the following commands to execute this script
+cd /rea/REA-Lobby-TV
+sudo ./update.sh
+
+# if updating fails due to local cahnges. run this to reset any local changes
+sudo git reset --hard HEAD
+```
