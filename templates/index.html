@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>REA Lobby TV</title>
+<script src="static/socket.io.min.js"></script>
 </head>
 <body>
 
@@ -15,6 +16,25 @@
   <source src="static/Screen.mp4" type="video/mp4"> 
 Your browser does not support the video tag.
 </video>
+
+    <script>
+      let socket;
+
+      function connect_socket()
+      {
+        socket = io()
+
+        socket.on("connect", () => {
+          alert("Connected to server!")
+        })
+
+        socket.on("state", () => {
+          alert("Reload page")
+        })
+      }
+
+      connect_socket();
+    </script>
 
 </body>
 </html>
