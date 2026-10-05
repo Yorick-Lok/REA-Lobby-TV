@@ -23,7 +23,7 @@ class Server:
         # flask instance
         self.app = Flask(__name__)
         self.http_port = 5000
-        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode="threading", logger=True, engineio_logger=True)
+        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode="threading",)
         self.socketio_data = []
         
         self.app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
@@ -67,13 +67,7 @@ class Server:
                 return redirect(url_for('login'))  # Stuur door naar login als dat niet zo is
         
             return render_template( "admin.html" )
-
-        @self.app.route("/update", methods=["GET"])
-        def update():
-            self.socketio.emit("state")
-            return "Update command sent!"
-
-            
+        
         @self.app.route("/upload", methods=["POST"])
         def upload():
             file = request.files["file"]
