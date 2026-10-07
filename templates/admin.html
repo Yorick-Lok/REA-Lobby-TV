@@ -56,17 +56,116 @@
         text-align: center;
         min-width: 160px;
       }
-    
+
+      .backup-panel {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10;
+      }
+
+      .backup-panel details {
+        width: 200px;
+      }
+      
+      .backup-panel summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        border: 1px solid #cfe0ff;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.94);
+        color: #222;
+        cursor: pointer;
+        font-weight: bold;
+        list-style: none;
+        box-shadow: 0 4px 14px rgba (0, 0, 0, 0.12);
+      }
+
+      .backup-panel summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .backup-panel summary::after {
+        content: "+";
+        display: grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #eaf3ff;
+        color: #2772e9;
+      }
+
+      .backup-panel details[open] {
+        border-radius: 12px 12px 0 0;
+        box-shadow: none;
+      }
+
+      .backup-panel details[open] summary::after {
+        content: "-";
+      }
+
+      .backup-panel details p {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0 14px 12px;
+        border-radius: 0 0 12px 12px;
+        background: rgba(255, 255, 255, 0.94);
+        color: #333;
+      }
+
+      .backup-panel ul {
+        box-sizing: border-box;
+        max-height: 240px;
+        margin: 0;
+        padding: 0 14px 12px;
+        overflow-y: auto;
+        border-radius: 0 0 12px 12px;
+        background: rgba(255, 255, 255, 0.94);
+        list-style: none;
+      }
+
+      .backup-panel li + li {
+        margin-top: 8px;
+      }
+
+      .backup-panel a {
+        color: #205dbb;
+        overflow-wrap: anywhere;
+      }
+
     </style>
     <title>REA Lobby TV Admin</title>
     <script src="https://unpkg.com/dropzone@6/dist/dropzone-min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/dropzone@6/dist/dropzone.css" type="text/css" />
   </head>
   <body>
-    <button type="button" id="Upload" disabled>Upload</button>
 
+    <button type="button" id="Upload" disabled>Upload</button>
     <div class="dropzone my-dropzone"></div>
     <div id="status">Please upload a file</div>
+
+    <aside class="backup-panel">
+      <details>
+        <summary>Backups</summary>
+        {% if backups %}
+        <ul>
+          {% for backup in backups %}
+          <li>
+            <a href="{{ url_for('static', filename='backups/' ~ backup) }}">
+              {{ backup }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No backups listed yet</p>
+    {% endif %}
+        
+      </details>
+    </aside>
 
     <script>
       // 1. Select the button using its ID

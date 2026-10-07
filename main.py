@@ -1,15 +1,25 @@
 
-from flask import Flask, request, render_template
+from flask import Flask, request, redirect, url_for, session, render_template
 import os
 import datetime
 from flask_socketio import SocketIO, emit
 from pathlib import Path
 import random
 
-
 class Server:
     def __init__( self ) -> None:
- 
+
+        
+        file = Path ("accountinfo.txt")
+        if file.exists(): 
+            with open( file , "r") as file:
+                for line in file:
+                    self.ADMIN_USERNAME,self.ADMIN_PASSWORD = line.strip().split(":", 1)
+        else:
+            self.ADMIN_USERNAME = 'admin'
+            self.ADMIN_PASSWORD = 'admin'
+        print (self.ADMIN_USERNAME)
+        print (self.ADMIN_PASSWORD)
         # flask instance
         self.app = Flask(__name__)
         self.http_port = 5000
@@ -19,6 +29,7 @@ class Server:
         self.app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
         self.app.config['DROPZONE_TIMEOUT'] = 0
 
+        self.app.config['SECRET_KEY'] = 'super-geheim-sleutel-123'
         self.create_routes()
 
     def BackUpCurrentScreen_mp4(self, static_dir: Path) -> None:
@@ -26,11 +37,7 @@ class Server:
         if not OldFile.exists():
             print ("the file does not exist")
             return
-
-
- 
-    
-
+        
         now=str(datetime.datetime.now())
         print (now)
         now = now.replace(':', '-')
@@ -41,8 +48,7 @@ class Server:
         if not os.path.exists(newpath):
             os.makedirs(newpath)
 
-        OldFile.rename(newFile)
-
+        OldFile.rename(newFile) 
     
     def create_routes( self ) -> None:
          
@@ -57,6 +63,9 @@ class Server:
         
         @self.app.route("/admin", methods=["GET"]) 
         def admin():
+            if not session.get('logged_in'):
+                return redirect(url_for('login'))  # Stuur door naar login als dat niet zo is
+        
             return render_template( "admin.html" )
 
         @self.app.route("/update", methods=["GET"])
@@ -88,6 +97,27 @@ class Server:
                 return "File uploaded successfully!"
             return "No file uploaded."
 
+        @self.app.route('/login', methods=['GET', 'POST'])
+        def login():
+            error = None
+            if request.method == 'POST':
+                username = request.form.get('username')
+                password = request.form.get('password')
+                
+                # Controleer de inloggegevens
+                if username == self.ADMIN_USERNAME and password == self.ADMIN_PASSWORD:
+                    session['logged_in'] = True  # Sla de inlogstatus op in de sessie
+                    return redirect(url_for('admin'))
+                else:
+                    error = 'Onjuiste gebruikersnaam of wachtwoord.'
+                    
+            return render_template("login.html", error=error)
+
+        @self.app.route('/logout')
+        def logout():
+            session.pop('logged_in', None)  # Verwijder de inlogstatus uit de sessie
+            return redirect(url_for('login'))
+
         self.socketio.run(
             self.app, 
             debug=False,
@@ -98,5 +128,4 @@ class Server:
 
 if __name__ == "__main__":
     manager = Server()
-    manager.run()
     
