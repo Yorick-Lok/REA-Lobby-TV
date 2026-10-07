@@ -1,3 +1,4 @@
+
 from flask import Flask, request, redirect, url_for, session, render_template
 import os
 import datetime
@@ -34,20 +35,20 @@ class Server:
     def BackUpCurrentScreen_mp4(self, static_dir: Path) -> None:
         OldFile = static_dir / "Screen.mp4"
         if not OldFile.exists():
-            print("the file does not exist")
+            print ("the file does not exist")
             return
-
-        now = str(datetime.datetime.now())
-        print(now)
+        
+        now=str(datetime.datetime.now())
+        print (now)
         now = now.replace(':', '-')
-        print(now)
+        print (now)    
 
         newFile = static_dir / f"backups/{now}.mp4"
-        newpath = static_dir / "backups"
+        newpath = static_dir / f"backups"
         if not os.path.exists(newpath):
             os.makedirs(newpath)
 
-        OldFile.rename(newFile)
+        OldFile.rename(newFile) 
     
     def create_routes( self ) -> None:
          
@@ -64,15 +65,8 @@ class Server:
         def admin():
             if not session.get('logged_in'):
                 return redirect(url_for('login'))  # Stuur door naar login als dat niet zo is
-            
-            backup_folder = Path("static/backups")
-            backups = sorted(
-                [file for file in backup_folder.iterdir() if file.is_file() and file.suffix == ".mp4"],
-                key=lambda file: file.stat().st_mtime,
-                reverse=True
-            )
-
-            return render_template("admin.html", backups=backups)
+        
+            return render_template( "admin.html" )
 
         @self.app.route("/update", methods=["GET"])
         def update():
@@ -134,3 +128,4 @@ class Server:
 
 if __name__ == "__main__":
     manager = Server()
+    
