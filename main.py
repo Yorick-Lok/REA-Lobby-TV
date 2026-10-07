@@ -6,6 +6,7 @@ from flask_socketio import SocketIO, emit
 from pathlib import Path
 import random
 import glob
+import locale
 
 class Server:
     def __init__( self ) -> None:
@@ -53,7 +54,7 @@ class Server:
 
         OldFile.rename(newFile) 
 
-    def get_sorted_backups( self ):
+    def get_sorted_backups( self ) -> list[str]:
         backups_folder = Path(f"{os.getcwd()}/static/backups")
 
         if not os.path.exists(backups_folder):
@@ -91,8 +92,26 @@ class Server:
         def admin():
             if not session.get('logged_in'):
                 return redirect(url_for('login'))  # Stuur door naar login als dat niet zo is
-        
-            return render_template( "admin.html" )
+
+            # get backups
+            backups = self.get_sorted_backups()
+
+            # convert backups to dict containing url and a readable name
+            # wo 07 okt 2026 11:36
+            readable = []
+            for file in backups:
+                filename = Path(file).name.replace(".mp4", "")
+                date_obj = datetime.datetime.strptime(filename, "%Y-%m-%d %H-%M-%S.%f")
+                readable_date = date_obj.strftime("%a %d %b %Y %H:%M")
+                readable_date = readable_date.replace(".", "")
+
+                data = {
+                    "name": readable_date,
+                    "url": file.replace(os.getcwd(), "")
+                }
+                readable.append( data )
+
+            return render_template( "admin.html", backups=readable )
 
         @self.app.route("/update", methods=["GET"])
         def update():
@@ -154,5 +173,10 @@ class Server:
         )
 
 if __name__ == "__main__":
+    try:
+        locale.setlocale(locale.LC_TIME, "nl_NL.UTF-8")
+    except locale.Error:
+        locale.setlocale(locale.LC_TIME, "Dutch_Netherlands.1252")
+
     manager = Server()
     
