@@ -154,9 +154,7 @@
         <ul>
           {% for backup in backups %}
           <li>
-            <a href="{{ url_for('static', filename='backups/' ~ backup) }}">
-              {{ backup }}
-            </a>
+            <a target="_blank" href="{{ backup.url }}">{{ backup.name }}</a>
           </li>
         {% endfor %}
       </ul>
