@@ -79,6 +79,29 @@ cd /rea/REA-Lobby-TV
 sudo ./update.sh
 ```
 
+## Authentication
+The default login is:
+
+| Username | Password |
+|----------|----------|
+| `admin`  | `admin`  |
+
+For a custom login, create a `accountinfo.txt` file containing the username and password separated by a `:`
+
+```text
+user:123456
+```
+```bash
+cd /rea/REA-Lobby-TV
+nano accountinfo.txt
+
+# write:
+admin:password
+
+# restart service
+sudo systemctl restart reatv
+```
+
 ## Updating
 There is a update script that will: 
 - Stop Flask
