@@ -1,0 +1,51 @@
+.transcoding-panel {
+    position: fixed;
+    top: 20px;
+    right: 240px;
+    z-index: 10;
+    width: 200px;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border: 1px solid #cfe0ff;
+    border-radius: 40px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #222;
+    font-size: 9px;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.transcoding-progress {
+    height: 5px;
+    margin-top: 3px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: #ddd;
+}
+
+#transcoding-progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #28a745;
+    transition: width 0.3s ease;
+}
+
+.transcoding-panel.running {
+    border-color: #28a745;
+    background: rgba(232, 255, 238, 0.94);
+}
+
+.transcoding-panel.done #transcoding-progress-bar {
+    width: 100%;
+}
+
+.transcoding-panel.running #transcoding-progress-bar {
+    animation: transcoding-indeterminate 1.5s ease-in-out infinite;
+    width: 35%;
+}
+
+@keyframes transcoding-indeterminate {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(310%); }
+}

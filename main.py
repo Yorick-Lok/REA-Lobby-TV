@@ -1,5 +1,5 @@
 
-from flask import Flask, request, redirect, url_for, session, render_template
+from flask import Flask, jsonify, request, redirect, url_for, session, render_template
 import os
 import datetime
 from flask_socketio import SocketIO, emit
@@ -7,6 +7,9 @@ from pathlib import Path
 import random
 import glob
 import locale
+
+
+from transcoding import Transcoding
 
 class Server:
     def __init__( self ) -> None:
@@ -34,7 +37,17 @@ class Server:
         self.app.config['DROPZONE_TIMEOUT'] = 0
 
         self.app.config['SECRET_KEY'] = 'super-geheim-sleutel-123'
+
+        # transcoding
+        self.transcoding = Transcoding( self )
+
         self.create_routes()
+
+    def get_status(self) -> dict:
+        return {
+            **self.transcoding.get_status(),
+            # other info later ..
+        }
 
     def BackUpCurrentScreen_mp4(self, static_dir: Path) -> None:
         OldFile = static_dir / "Screen.mp4"
@@ -52,7 +65,12 @@ class Server:
         if not os.path.exists(newpath):
             os.makedirs(newpath)
 
-        OldFile.rename(newFile) 
+        try:
+            OldFile.rename(newFile)
+
+        except PermissionError as e:
+            print(f"Could not back up Screen.mp4: file is still in use: {e}")
+            raise
 
     def get_sorted_backups( self ) -> list[str]:
         backups_folder = Path(f"{os.getcwd()}/static/backups")
@@ -76,13 +94,14 @@ class Server:
         for file in to_remove:
             path = Path(file)
             path.unlink()
-    
+
     def create_routes( self ) -> None:
          
         @self.socketio.on("connect") 
         def handle_connect():
             """Send initial application state to a newly connected client."""
             print("Client connected")
+            emit("status", self.get_status())
 
         @self.app.route("/", methods=["GET"])
         def index():
@@ -111,20 +130,28 @@ class Server:
                 }
                 readable.append( data )
 
-            return render_template( "admin.html", backups=readable )
+            return render_template( "admin.html", backups=readable, transcoding=self.transcoding )
 
         @self.app.route("/update", methods=["GET"])
         def update():
             self.socketio.emit("state")
             return "Update command sent!"
 
-            
+        @self.app.route("/test_transoce", methods=["GET"])
+        def test_transcode():
+            return jsonify(
+                self.transcoding.start_transcoding()
+            )
+        
         @self.app.route("/upload", methods=["POST"])
         def upload():
             file = request.files["file"]
             if file:
                 if Path(f"{file.filename}").suffix != '.mp4':
                     return
+
+                # stop running transcodes
+                self.transcoding.cancel_transcoding()
                 
                 # rename old ..
                 folder= str(Path(__file__).resolve().parent)
@@ -140,6 +167,10 @@ class Server:
                 file.save("static/Screen.mp4")
                 self.remove_old_backups()
                 self.socketio.emit("state", data)
+
+                # transcode the file, swap them when ready.
+                self.transcoding.start_transcoding()
+                
                 return "File uploaded successfully!"
             return "No file uploaded."
 

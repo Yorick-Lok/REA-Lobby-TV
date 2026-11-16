@@ -138,14 +138,26 @@
 
     </style>
     <title>REA Lobby TV Admin</title>
+    <script src="/static/socket.io.min.js"></script>
     <script src="https://unpkg.com/dropzone@6/dist/dropzone-min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/dropzone@6/dist/dropzone.css" type="text/css" />
+    <link rel="stylesheet" href="static/css/transcoding.css" type="text/css" />
   </head>
   <body>
-
     <button type="button" id="Upload" disabled>Upload</button>
     <div class="dropzone my-dropzone"></div>
     <div id="status">Please upload a file</div>
+
+    <!-- test transcodig without uploading new file -->
+    <button type="button" id="test_transcode" style="display:none; position: absolute; top:0; left:0;">Transcode</button>
+
+    <aside class="transcoding-panel" id="transcoding-panel">
+        <div id="transcoding-status">Transcoding: Done</div>
+
+        <div class="transcoding-progress">
+            <div id="transcoding-progress-bar"></div>
+        </div>
+    </aside>
 
     <aside class="backup-panel">
       <details>
@@ -268,6 +280,63 @@
       });
 
       updateButtonState(); // Initial button state
+
+        // transcode test
+        
+        async function handle_test_transcode() {
+            try {
+                const response = await fetch("/test_transoce");
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log(result);
+            } catch (error) {
+                console.error(error.message);
+            }
+        }
+        const transcode_test_button = document.getElementById('test_transcode');
+        transcode_test_button.addEventListener('click', handle_test_transcode);
+
+        function updateTranscodingStatus(data) {
+            const panel = document.getElementById("transcoding-panel");
+            const status = document.getElementById("transcoding-status");
+            const progressBar = document.getElementById("transcoding-progress-bar");
+
+            panel.className = data.state ? "transcoding-panel running" : "transcoding-panel done";
+            status.textContent = data.state
+                ? `Transcoding: ${data.progress === false ? "Running" : data.progress + "%"}`
+                : "Transcoding: Done";
+
+            progressBar.style.width = data.progress === false ? "0%" : `${data.progress || 0}%`;
+        }
+
+        // Socket
+        function connect_socket() {
+            socket = io({ transports: ["websocket"] });
+
+            socket.on("connect", () => {
+                console.log("Socket connected");
+            });
+
+            socket.on("disconnect", () => {
+                console.log("Socket disconnected", true);
+            });
+
+            socket.on("state", () => {
+                //window.location.reload();
+            });
+
+            socket.on("status", (data) => {
+                const transcoding = data.transcoding;
+                console.log("Server status:", data);
+                
+                if (data.transcoding) 
+                    updateTranscodingStatus(data.transcoding);
+            });
+        }
+        connect_socket();
     </script>
   </body>
 </html>
