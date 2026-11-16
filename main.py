@@ -30,7 +30,7 @@ class Server:
         # the maximum amount of backups that remains in the backups folder
         self.MAX_BACKUPS = 5
         
-        self.app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
+        self.app.config['MAX_CONTENT_LENGTH'] = 2048 * 1024 * 1024 
         self.app.config['DROPZONE_TIMEOUT'] = 0
 
         self.app.config['SECRET_KEY'] = 'super-geheim-sleutel-123'
