@@ -115,19 +115,20 @@ class Transcoding:
             "-y",
             "-fflags", "+discardcorrupt",
             "-err_detect", "ignore_err",
-            "-i", str(input_file),
+            "-i", str(self.input_file),
             "-map", "0:v:0",
-            "-map", "0:a?",
+            # "-map", "0:a?",           # disable audio
             "-c:v", "libx264",
             "-preset", "ultrafast",
-            "-crf", "20",
+            "-crf", "18",
+            "-x264-params", "keyint=300:min-keyint=30:bframes=6:ref=5:chroma_qp_offset=-2",
             "-pix_fmt", "yuv420p",
-            "-c:a", "aac",
-            "-b:a", "192k",
+            # "-c:a", "aac",            # disable audio
+            # "-b:a", "192k",           # disable audio
             "-movflags", "+faststart",
             "-progress", "pipe:1",
             "-nostats",
-            str(output_file)
+            str(self.output_file)
         ]
 
         try:
