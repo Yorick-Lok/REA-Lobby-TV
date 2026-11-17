@@ -1,7 +1,7 @@
 import subprocess
 import threading
 from pathlib import Path
-import random
+import shutil
 
 from typing import TYPE_CHECKING
 
@@ -18,14 +18,23 @@ class Transcoding:
         self.transcoding_cancel = threading.Event()
         self.transcoding_thread = None
 
+        _static_dir = Path(__file__).resolve().parent / "static"
+        self.input_file     = _static_dir / "Screen.mp4"
+        self.output_file    = _static_dir / "Screen-transcoding.mp4"
+        self.backup_file    = _static_dir / "Screen-unencoded.mp4"
+        
         self.context : Server       = context
+
+    def has_temp_trancodeded_video(self):
+        return self.output_file.exists() and not self.transcoding
 
     def get_status(self) -> dict:
         return {
             "transcoding" : {
-                "state"     : self.transcoding,
-                "file"      : self.transcoding_file,
-                "progress"  : self.transcoding_progress
+                "state"             : self.transcoding,
+                "file"              : self.transcoding_file,
+                "progress"          : self.transcoding_progress,
+                "use_transcoded"    : not self.has_temp_trancodeded_video()
             }
         }
 
@@ -92,13 +101,8 @@ class Transcoding:
         self.cancel_transcoding()
         self.transcoding_cancel.clear()
 
-        static_dir = Path(__file__).resolve().parent / "static"
-        input_file = static_dir / "Screen.mp4"
-        output_file = static_dir / "Screen-transcoding.mp4"
-        backup_file = static_dir / "Screen-unencoded.mp4"
-
         try:
-            duration = self.get_video_duration(input_file)
+            duration = self.get_video_duration(self.input_file)
         except (OSError, subprocess.SubprocessError, ValueError) as e:
             return {
                 "success"   : False,
@@ -147,7 +151,7 @@ class Transcoding:
 
         self.transcoding_thread = threading.Thread(
             target=self.monitor_transcoding,
-            args=(self.transcoding_process, duration, input_file, output_file, backup_file),
+            args=(self.transcoding_process, duration),
             daemon=True
         )
         self.transcoding_thread.start()
@@ -157,18 +161,27 @@ class Transcoding:
             "message"   : "Transcoding started"
         }
 
-    def transcoding_complete_success(self, input_file: Path, output_file: Path, backup_file: Path) -> None:
-        # Remove previous backup (Screen-unencoded.mp4), if it exists
-        # And preserve the original uploaded video 
-        # (Screen.mp4 -. Screen-unencoded.mp4)
-        backup_file.unlink(missing_ok=True)
-        input_file.rename(backup_file)
+    def replace_files_post_transcoding(self) -> None:
+        try:
+            # make sure there are no active file locks
+            self.context.stop_client_playback()
 
-        # Replace the original video with the transcoded version 
-        # (Screen-transcoding.mp4 -> Screen.mp4)
-        output_file.rename(input_file)
+            # Replace previous backup (Screen-unencoded.mp4)
+            self.backup_file.unlink(missing_ok=True)
+            shutil.copy2(self.input_file, self.backup_file)
 
-    def monitor_transcoding(self, process: subprocess.Popen, duration: float | None, input_file: Path, output_file: Path, backup_file: Path) -> None:
+            # Replace the original video with the transcoded version 
+            # (Screen-transcoding.mp4 -> Screen.mp4)
+            self.output_file.replace(self.input_file)
+
+            # refresh any active client browsers forcing a video reload
+            self.context.refresh_client()
+
+        except Exception as e:
+            print(f"[Transcoding] Failed to replace original video: {e}")
+            raise
+
+    def monitor_transcoding(self, process: subprocess.Popen, duration: float | None) -> None:
         """Monitor FFmpeg progress and update application state."""
         last_progress = -1
 
@@ -197,24 +210,18 @@ class Transcoding:
         if process.stdout:
             process.stdout.close()
 
-        if self.transcoding_cancel.is_set():
-            print("Transcoding cancelled")
+        try:
+            if self.transcoding_cancel.is_set():
+                print("Transcoding cancelled")
+            elif return_code == 0:
+                print("Transcoding completed successfully")
+                self.replace_files_post_transcoding()
+            else:
+                print(f"Transcoding failed with exit code {return_code}")
 
-        elif return_code == 0:
-            print("Transcoding completed successfully")
-            self.transcoding_complete_success(input_file, output_file, backup_file)
-
-            # update the active browser forcing a video reload
-            data = {
-                "number": random.randrange(20, 5000, 3)
-            }
-            self.context.socketio.emit("state", data)
-
-        else:
-            print(f"Transcoding failed with exit code {return_code}")
-
-        self.transcoding            = False
-        self.transcoding_file       = False
-        self.transcoding_progress   = False
-        self.transcoding_process    = None
-        self.context.socketio.emit("status", self.get_status())
+        finally:
+            self.transcoding            = False
+            self.transcoding_file       = False
+            self.transcoding_progress   = False
+            self.transcoding_process    = None
+            self.context.socketio.emit("status", self.get_status())
