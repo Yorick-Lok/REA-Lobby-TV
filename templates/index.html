@@ -63,8 +63,19 @@
     const source = document.getElementById("screen");
     const status = document.getElementById("status");
     const events = document.getElementById("events");
+    const debug = document.getElementById("debug");
+
+    const VIDEO_DEBUG_OVERLAY = {{ VIDEO_DEBUG_OVERLAY | default(false) | tojson }};
+
+    if (!VIDEO_DEBUG_OVERLAY)
+        debug.hidden = true;
 
     function logEvent(name, error = false) {
+        console.log(`[VIDEO] ${name}`);
+
+        if (!VIDEO_DEBUG_OVERLAY)
+            return
+
         const time = new Date().toLocaleTimeString();
         const entry = document.createElement("div");
         entry.className = `event${error ? " error" : ""}`;
@@ -75,9 +86,7 @@
         // Keep the latest 12 events.
         while (events.children.length > 12) {
             events.lastElementChild.remove();
-        }
-
-        console.log(`[VIDEO] ${name}`);
+        }  
     }
 
 function getBufferInfo() {
@@ -153,6 +162,13 @@ function updateStatus() {
 
         socket.on("disconnect", () => {
             logEvent("Socket disconnected", true);
+        });
+
+        // make sure there are no active file locks
+        socket.on("stop_video", () => {
+            video.pause();
+            source.removeAttribute("src");
+            video.load();
         });
 
         socket.on("state", () => {

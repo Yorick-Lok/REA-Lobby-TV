@@ -7,7 +7,8 @@ from pathlib import Path
 import random
 import glob
 import locale
-
+import shutil
+import time
 
 from transcoding import Transcoding
 
@@ -23,6 +24,9 @@ class Server:
         else:
             self.ADMIN_USERNAME = 'admin'
             self.ADMIN_PASSWORD = 'admin'
+
+        # enable to show a video overlay on index.html
+        self.VIDEO_DEBUG_OVERLAY = False
 
         # flask instance
         self.app = Flask(__name__)
@@ -49,6 +53,16 @@ class Server:
             # other info later ..
         }
 
+    def stop_client_playback(self):
+        self.socketio.emit("stop_video")
+        time.sleep(5)
+
+    def refresh_client(self):
+        data = {
+            "number": random.randrange(20, 5000, 3)
+        }
+        self.socketio.emit("state", data)
+
     def BackUpCurrentScreen_mp4(self, static_dir: Path) -> None:
         OldFile = static_dir / "Screen.mp4"
         if not OldFile.exists():
@@ -66,7 +80,8 @@ class Server:
             os.makedirs(newpath)
 
         try:
-            OldFile.rename(newFile)
+            #OldFile.rename(newFile)
+            shutil.copy2(OldFile, newFile)
 
         except PermissionError as e:
             print(f"Could not back up Screen.mp4: file is still in use: {e}")
@@ -105,7 +120,9 @@ class Server:
 
         @self.app.route("/", methods=["GET"])
         def index():
-            return render_template( "index.html" ) 
+            return render_template( "index.html", 
+                VIDEO_DEBUG_OVERLAY = self.VIDEO_DEBUG_OVERLAY 
+            ) 
         
         @self.app.route("/admin", methods=["GET"]) 
         def admin():
@@ -130,19 +147,45 @@ class Server:
                 }
                 readable.append( data )
 
-            return render_template( "admin.html", backups=readable, transcoding=self.transcoding )
+            return render_template( "admin.html", backups=readable )
 
         @self.app.route("/update", methods=["GET"])
         def update():
-            self.socketio.emit("state")
+            self.refresh_client()
             return "Update command sent!"
 
-        @self.app.route("/test_transoce", methods=["GET"])
-        def test_transcode():
+        @self.app.route("/manual_transcode", methods=["GET"])
+        def manual_transcode():
             return jsonify(
                 self.transcoding.start_transcoding()
             )
-        
+
+        @self.app.route("/retry_transcode", methods=["GET"])
+        def retry_transcode():
+            try:
+                # file was transcoded, replace only
+                if self.transcoding.has_temp_trancodeded_video():
+                    self.transcoding.replace_files_post_transcoding()
+                
+                # re-transcode and replace
+                else:
+                    self.transcoding.start_transcoding()
+ 
+            except Exception as e:
+                print(f"[Transcoding] Retry failed: {e}")
+                return jsonify(
+                    success=False, 
+                    message=str(e)
+                ), 500
+            
+            finally:
+                print("[Transcoding] Retry complete")
+                self.socketio.emit("status", self.get_status())
+    
+            return jsonify(
+                success = True
+            )
+
         @self.app.route("/upload", methods=["POST"])
         def upload():
             file = request.files["file"]
@@ -152,6 +195,9 @@ class Server:
 
                 # stop running transcodes
                 self.transcoding.cancel_transcoding()
+
+                # make sure there are no active file locks
+                self.stop_client_playback()
                 
                 # rename old ..
                 folder= str(Path(__file__).resolve().parent)
@@ -166,9 +212,12 @@ class Server:
 
                 file.save("static/Screen.mp4")
                 self.remove_old_backups()
-                self.socketio.emit("state", data)
 
-                # transcode the file, swap them when ready.
+                # refresh any active client browsers forcing a video reload
+                self.refresh_client()
+
+                # transcode the file, swap them when ready, 
+                # then refresh active client browser.
                 self.transcoding.start_transcoding()
                 
                 return "File uploaded successfully!"
