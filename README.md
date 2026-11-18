@@ -2,8 +2,36 @@
 
 Project Board: https://github.com/users/Yorick-Lok/projects/2
 
+## Project Overview
+### The question
+A wall-mounted tv, displaying presentation slides, that could also include video? 
 
-## Prerequisites
+### Here is what we came up with
+- Python `Flask` web-based backend.
+- Admin page with `authentication`.
+- Keep `x` amount of backups of previous uploads.
+- Auto-update `clients` when a upload completes using `websocket`.
+- Post upload `transcoding` with a progress bar.
+
+### Technical usage breakdown
+1. Login to the `http://<server-ip>:5000/admin`, see: [Auth credentials](#authentication)
+2. Upload the `.mp4` that you want to display. `max 2GB`
+3. The backend emits a **'refresh-page'** command using `websocket`, once upload completes.
+    - `clients` may stop video playback, and display a blank screen during file replacement. This is to prevent any active file-locks.
+4. `clients` display the newly uploaded `.mp4` after upload, backup and saving completes.
+
+> [!WARNING]
+> A `.mp4` may contains corrupted frames. Some hardware-encoders may present issues, like freezes or stuttering.
+>
+> - To make this safer:
+>     - A post upload `transcoding` process is started, using `ffmpeg`. `Removing audio and discard corrupt frames`
+>     - Transcoding may reduce filesize by 30-40%.
+>     - Progress is displayed in the admin panel.
+>     - **The browser does not need to remain open during this process.**
+>     - Once completed, steps `3-4` are repeated, replacing the current video with the `transcoded` version.
+>     - The original is preserved: `http://<server-ip>:5000/static/Screen-unencoded.mp4`
+
+## Deployment Prerequisites
 This example uses [FullPageOS](https://github.com/guysoft/fullpageos) as the linux operatinng system.
 
 default OS login:
@@ -24,9 +52,9 @@ sudo git clone https://github.com/Yorick-Lok/REA-Lobby-TV.git
 sudo chmod +x update.sh
 ```
 
-3. Setup Flask / Socket.IO
+3. Setup Flask / Socket.IO & FFmpeg
 ```bash
-sudo apt-get install python3-venv python3-full
+sudo apt-get install python3-venv python3-full ffmpeg
 python3 -m venv .venv
 
 .venv/bin/pip install \
@@ -117,3 +145,29 @@ sudo ./update.sh
 # if updating fails due to local cahnges. run this to reset any local changes
 sudo git reset --hard HEAD
 ```
+
+
+## Development
+1. Clone the project using your preferred `IDE` or `Github Desktop`.
+2. Open a terminal in the root of the project.
+3. Install the requirements
+    ```bash
+    python -m pip install -r requirements.txt
+    ```
+4. Run
+    ```bash
+    .\main.py
+
+    # use ctrl+c to stop the active instance.
+    ```
+5. Navigate to: 
+    - `http://localhost:5000` for video playback
+    - `http://localhost:5000/admin` for admin panel
+
+    ### FFmpeg on windows
+    If you want to test `transcoding` in a windows environment, you needs to have ffmpeg installed on your device and added to system PATH.
+    
+    You can also use `winget` command:
+    ```bash
+    winget install Gyan.FFmpeg
+    ```
